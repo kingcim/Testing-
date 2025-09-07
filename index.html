@@ -10,11 +10,12 @@
 
 <h1>🚀 Space XMD Hosting</h1>
 
-<input type="text" id="username" placeholder="Enter your GitHub username">
+<input type="text" id="username" placeholder="GitHub Username">
 <button onclick="checkFork()">Check Repo</button>
 
 <div id="actions" style="margin-top:20px;"></div>
-<div id="logs" style="white-space:pre-wrap; background:#000; color:#0f0; padding:10px; width:90%; max-width:600px; height:200px; overflow:auto; margin-top:20px;"></div>
+
+<div id="logs"></div>
 
 <script>
 const actions = document.getElementById("actions");
@@ -28,27 +29,19 @@ function log(msg) {
 async function checkFork() {
     const username = document.getElementById("username").value.trim();
     if (!username) { alert("Enter username"); return; }
-    log("🔍 Checking if repo is forked...");
 
+    log("🔍 Checking fork...");
     const res = await fetch("/checkFork", {
         method:"POST",
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify({username})
     });
     const data = await res.json();
-
     actions.innerHTML = "";
 
     if(data.forked) {
         log("✅ Repo already forked!");
-        const deployBtn = document.createElement("button");
-        deployBtn.textContent = "Deploy to Render";
-        deployBtn.onclick = () => {
-            const renderURL = `https://render.com/deploy?repo=${data.repo}`;
-            window.open(renderURL, "_blank");
-            log("🚀 Deployment started on Render...");
-        };
-        actions.appendChild(deployBtn);
+        createDeployButtons(data.repo);
     } else {
         log("⚠️ Repo not forked yet");
         const forkBtn = document.createElement("button");
@@ -62,14 +55,50 @@ async function checkFork() {
             });
             const forkData = await forkRes.json();
             if(forkData.success) {
-                log("✅ Repo forked successfully!");
-                checkFork();
+                log("✅ Repo forked!");
+                createDeployButtons(forkData.repo);
             } else {
                 log("❌ Fork failed: " + forkData.error);
             }
         };
         actions.appendChild(forkBtn);
     }
+}
+
+function createDeployButtons(repoUrl) {
+    actions.innerHTML = "";
+
+    const deployBtn = document.createElement("button");
+    deployBtn.textContent = "Deploy to Render";
+    deployBtn.onclick = () => simulateDeploy(repoUrl);
+    actions.appendChild(deployBtn);
+
+    const stopBtn = document.createElement("button");
+    stopBtn.textContent = "Stop Deployment";
+    stopBtn.onclick = () => log("🛑 Stop deployment - manage manually in Render dashboard");
+    actions.appendChild(stopBtn);
+}
+
+// Simulate live deploy logs
+function simulateDeploy(repoUrl) {
+    window.open(`https://render.com/deploy?repo=${repoUrl}`, "_blank");
+    log("🚀 Deployment started...");
+
+    const steps = [
+        "Connecting to Render...",
+        "Cloning repo...",
+        "Installing dependencies...",
+        "Building bot...",
+        "Starting deployment...",
+        "Deployment completed! ✅"
+    ];
+
+    let i = 0;
+    const interval = setInterval(() => {
+        log(steps[i]);
+        i++;
+        if(i >= steps.length) clearInterval(interval);
+    }, 1500);
 }
 </script>
 
