@@ -7,11 +7,13 @@ const fs = require("fs");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Multer config (upload dir)
+// Multer config
 const upload = multer({ dest: "uploads/" });
 
-// Serve frontend
-app.use(express.static("public"));
+// Root route -> show index.html directly
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
 
 // Upload route
 app.post("/upload", upload.single("file"), (req, res) => {
