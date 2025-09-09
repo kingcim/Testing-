@@ -1,47 +1,42 @@
-const express = require('express');
-const fetch = require('node-fetch'); // npm i node-fetch@2
-const bodyParser = require('body-parser');
-const cors = require('cors');
+const express = require("express");
+const multer = require("multer");
+const crypto = require("crypto");
+const path = require("path");
+const fs = require("fs");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Your reCAPTCHA secret key
-const RECAPTCHA_SECRET = '6Le1ecErAAAAAAHnOx0AakSz2Gn7c_J-cWySnrYb';
+// Multer config (upload dir)
+const upload = multer({ dest: "uploads/" });
 
-app.use(cors());
-app.use(bodyParser.json());
+// Serve frontend
+app.use(express.static("public"));
 
-// Endpoint to verify reCAPTCHA token
-app.post('/verify-recaptcha', async (req, res) => {
-    const { token } = req.body;
+// Upload route
+app.post("/upload", upload.single("file"), (req, res) => {
+  if (!req.file) return res.status(400).send("⚠️ No file uploaded!");
 
-    if (!token) {
-        return res.status(400).json({ success: false, message: 'Token is required' });
-    }
+  const randomId = crypto.randomBytes(6).toString("hex");
+  const ext = path.extname(req.file.originalname);
+  const newFilename = `${randomId}${ext}`;
+  const newPath = path.join("uploads", newFilename);
 
-    try {
-        const response = await fetch(
-            `https://www.google.com/recaptcha/api/siteverify`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `secret=${RECAPTCHA_SECRET}&response=${token}`
-            }
-        );
-        const data = await response.json();
+  fs.renameSync(req.file.path, newPath);
 
-        if (data.success) {
-            return res.json({ success: true, message: 'reCAPTCHA verified successfully' });
-        } else {
-            return res.status(400).json({ success: false, message: 'reCAPTCHA verification failed', errors: data['error-codes'] });
-        }
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ success: false, message: 'Server error' });
-    }
+  const fileUrl = `${req.protocol}://${req.get("host")}/view/${newFilename}`;
+
+  res.send(`
+    <h2>✅ File uploaded successfully!</h2>
+    <p>Access your file here:</p>
+    <a href="${fileUrl}" target="_blank">${fileUrl}</a>
+  `);
 });
 
+// Serve uploaded files
+app.use("/view", express.static("uploads"));
+
+// Start server
 app.listen(PORT, () => {
-    console.log(`reCAPTCHA server running on port ${PORT}`);
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
