@@ -215,7 +215,7 @@ app.use((req, res, next) => {
               <p>Please make sure your project has an <code>index.html</code> file as the main entry point.</p>
               
               <div class="actions">
-                <a href="/" class="btn btn-primary">
+                <a href="codewave-unit.zone.id/developer/web-hosting" class="btn btn-primary">
                   <i class="fas fa-home"></i> Return to Home
                 </a>
                 
@@ -491,7 +491,7 @@ app.get("/", (req, res) => {
         <h1>🌐 Codewave Web Hosting</h1>
         <p>Free hosting for your web projects</p>
         <p>Developed by Iconic Tech • Protected by SilentByte Security System</p>
-        <a href="/upload.html">Go to Upload Interface</a>
+        <a href="codewave-unit.zone.id/developer/web-hosting">Go to Upload Interface</a>
       </div>
     </body>
     </html>
@@ -653,11 +653,11 @@ app.use((req, res) => {
             <p>Please check the project name or upload it again using our upload interface.</p>
             
             <div class="actions">
-              <a href="/" class="btn btn-primary">
+              <a href="codewave-unit.zone.id/developer/web-hosting" class="btn btn-primary">
                 <i class="fas fa-home"></i> Return to Home
               </a>
               
-              <a href="/upload.html" class="btn btn-secondary">
+              <a href="codewave-unit.zone.id/developer/web-hosting" class="btn btn-secondary">
                 <i class="fas fa-cloud-upload-alt"></i> Upload a New Project
               </a>
             </div>
@@ -679,7 +679,7 @@ app.use((req, res) => {
     <div style="font-family: 'Poppins', sans-serif; text-align: center; padding: 50px 20px;">
       <h1 style="color: #6366f1;">404 - Page Not Found</h1>
       <p>The page you're looking for doesn't exist.</p>
-      <a href="/" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background: #6366f1; color: white; text-decoration: none; border-radius: 6px;">
+      <a href="codewave-unit.zone.id/developer/web-hosting" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background: #6366f1; color: white; text-decoration: none; border-radius: 6px;">
         Return to Home
       </a>
     </div>
