@@ -9,8 +9,8 @@ const PORT = process.env.PORT || 3000;
 
 // Enable CORS (so frontend hosted anywhere can call backend)
 app.use(cors());
-app.use(express.json({ limit: '10mb' })); // For parsing application/json
-app.use(express.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 
 // Serve hosted projects
 app.use(express.static(path.join(__dirname, "sites")));
@@ -44,10 +44,9 @@ const storage = multer.diskStorage({
 const upload = multer({ 
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit per file
+    fileSize: 10 * 1024 * 1024,
   },
   fileFilter: function (req, file, cb) {
-    // Allow only certain file types
     const allowedTypes = /html|css|js|txt|json|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
@@ -58,6 +57,187 @@ const upload = multer({
       cb(new Error('Only web files (HTML, CSS, JS, images, fonts) are allowed'));
     }
   }
+});
+
+// Custom middleware to handle missing index files
+app.use((req, res, next) => {
+  const pathParts = req.path.split('/').filter(part => part !== '');
+  
+  if (pathParts.length > 0) {
+    const requestedProject = pathParts[0];
+    const projectPath = path.join(__dirname, "sites", requestedProject);
+    
+    if (fs.existsSync(projectPath) && fs.statSync(projectPath).isDirectory()) {
+      const indexPath = path.join(projectPath, 'index.html');
+      if (!fs.existsSync(indexPath)) {
+        // Project exists but no index.html - show custom error page
+        return res.status(404).send(`
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Missing Index File - Codewave Web Hosting</title>
+            <style>
+              :root {
+                --primary: #6366f1;
+                --primary-dark: #4f46e5;
+                --secondary: #1e293b;
+                --light: #f8fafc;
+                --dark: #0f172a;
+              }
+              
+              * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+              }
+              
+              body {
+                font-family: 'Poppins', sans-serif;
+                background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+                color: white;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                padding: 20px;
+              }
+              
+              .container {
+                text-align: center;
+                padding: 40px;
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                border-radius: 16px;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                max-width: 600px;
+                width: 100%;
+              }
+              
+              h1 {
+                font-size: 2.5rem;
+                margin-bottom: 20px;
+                color: white;
+              }
+              
+              p {
+                margin-bottom: 25px;
+                font-size: 1.1rem;
+                line-height: 1.6;
+                opacity: 0.9;
+              }
+              
+              .icon {
+                font-size: 4rem;
+                margin-bottom: 25px;
+                color: rgba(255, 255, 255, 0.8);
+              }
+              
+              .project-name {
+                background: rgba(255, 255, 255, 0.15);
+                padding: 10px 20px;
+                border-radius: 8px;
+                display: inline-block;
+                margin: 15px 0;
+                font-weight: 500;
+              }
+              
+              .actions {
+                margin-top: 30px;
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+                align-items: center;
+              }
+              
+              .btn {
+                padding: 12px 25px;
+                border-radius: 8px;
+                border: none;
+                font-weight: 500;
+                cursor: pointer;
+                text-decoration: none;
+                display: inline-block;
+                transition: all 0.3s ease;
+                font-size: 1rem;
+              }
+              
+              .btn-primary {
+                background: white;
+                color: var(--primary);
+              }
+              
+              .btn-primary:hover {
+                background: #f1f5f9;
+                transform: translateY(-2px);
+              }
+              
+              .btn-secondary {
+                background: transparent;
+                color: white;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+              }
+              
+              .btn-secondary:hover {
+                background: rgba(255, 255, 255, 0.1);
+              }
+              
+              .credit {
+                margin-top: 40px;
+                padding-top: 20px;
+                border-top: 1px solid rgba(255, 255, 255, 0.2);
+                font-size: 0.9rem;
+                opacity: 0.7;
+              }
+              
+              @media (max-width: 600px) {
+                .container {
+                  padding: 30px 20px;
+                }
+                
+                h1 {
+                  font-size: 2rem;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="icon">
+                <i class="fas fa-exclamation-triangle"></i>
+              </div>
+              
+              <h1>Missing Index File</h1>
+              
+              <p>The project <span class="project-name">${requestedProject}</span> exists but doesn't contain an <code>index.html</code> file.</p>
+              
+              <p>Please make sure your project has an <code>index.html</code> file as the main entry point.</p>
+              
+              <div class="actions">
+                <a href="/" class="btn btn-primary">
+                  <i class="fas fa-home"></i> Return to Home
+                </a>
+                
+                <a href="/upload.html" class="btn btn-secondary">
+                  <i class="fas fa-cloud-upload-alt"></i> Upload a New Project
+                </a>
+              </div>
+              
+              <div class="credit">
+                <p>Developed by Iconic Tech • Protected by SilentByte Security System</p>
+              </div>
+            </div>
+            
+            <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+          </body>
+          </html>
+        `);
+      }
+    }
+  }
+  
+  next();
 });
 
 // API route to get user's projects
@@ -87,7 +267,6 @@ app.post("/api/projects", (req, res) => {
       projects = JSON.parse(fs.readFileSync(dbPath, "utf8"));
     }
     
-    // Check if project already exists
     const existingIndex = projects.findIndex(p => p.name === name);
     if (existingIndex >= 0) {
       projects[existingIndex] = { name, url, date, files };
@@ -114,7 +293,6 @@ app.delete("/api/projects/:name", (req, res) => {
       fs.writeFileSync(dbPath, JSON.stringify(projects, null, 2));
     }
     
-    // Also delete the project files
     const projectDir = path.join(__dirname, "sites", projectName);
     if (fs.existsSync(projectDir)) {
       fs.rmSync(projectDir, { recursive: true, force: true });
@@ -128,18 +306,11 @@ app.delete("/api/projects/:name", (req, res) => {
 
 // Upload route - handle multiple files
 app.post("/upload", upload.array('files', 20), (req, res) => {
-  console.log("➡️ Upload request received");
-  console.log("Files:", req.files);
-  console.log("Project:", req.body.project);
-
   if (!req.files || req.files.length === 0 || !req.body.project) {
     return res.status(400).send("⚠️ Please provide both files and a project name!");
   }
 
-  // Clean project name
   const projectName = req.body.project.toLowerCase().replace(/[^a-z0-9\-]/g, "-");
-  
-  // Build project URL
   const projectUrl = `${req.protocol}://${req.get("host")}/${projectName}`;
   
   // Save project info to database
@@ -151,7 +322,6 @@ app.post("/upload", upload.array('files', 20), (req, res) => {
       projects = JSON.parse(fs.readFileSync(dbPath, "utf8"));
     }
     
-    // Check if project already exists
     const existingIndex = projects.findIndex(p => p.name === projectName);
     const fileList = req.files.map(file => ({
       name: file.originalname,
@@ -325,6 +495,194 @@ app.get("/", (req, res) => {
       </div>
     </body>
     </html>
+  `);
+});
+
+// Handle 404 errors for non-existent projects
+app.use((req, res) => {
+  const pathParts = req.path.split('/').filter(part => part !== '');
+  
+  if (pathParts.length > 0) {
+    const requestedProject = pathParts[0];
+    const projectPath = path.join(__dirname, "sites", requestedProject);
+    
+    if (!fs.existsSync(projectPath)) {
+      // Project doesn't exist
+      return res.status(404).send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Project Not Found - Codewave Web Hosting</title>
+          <style>
+            /* Same styles as the missing index page, but with different content */
+            :root {
+              --primary: #6366f1;
+              --primary-dark: #4f46e5;
+              --secondary: #1e293b;
+              --light: #f8fafc;
+              --dark: #0f172a;
+            }
+            
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            
+            body {
+              font-family: 'Poppins', sans-serif;
+              background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+              color: white;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              padding: 20px;
+            }
+            
+            .container {
+              text-align: center;
+              padding: 40px;
+              background: rgba(255, 255, 255, 0.1);
+              backdrop-filter: blur(10px);
+              border-radius: 16px;
+              border: 1px solid rgba(255, 255, 255, 0.2);
+              max-width: 600px;
+              width: 100%;
+            }
+            
+            h1 {
+              font-size: 2.5rem;
+              margin-bottom: 20px;
+              color: white;
+            }
+            
+            p {
+              margin-bottom: 25px;
+              font-size: 1.1rem;
+              line-height: 1.6;
+              opacity: 0.9;
+            }
+            
+            .icon {
+              font-size: 4rem;
+              margin-bottom: 25px;
+              color: rgba(255, 255, 255, 0.8);
+            }
+            
+            .project-name {
+              background: rgba(255, 255, 255, 0.15);
+              padding: 10px 20px;
+              border-radius: 8px;
+              display: inline-block;
+              margin: 15px 0;
+              font-weight: 500;
+            }
+            
+            .actions {
+              margin-top: 30px;
+              display: flex;
+              flex-direction: column;
+              gap: 15px;
+              align-items: center;
+            }
+            
+            .btn {
+              padding: 12px 25px;
+              border-radius: 8px;
+              border: none;
+              font-weight: 500;
+              cursor: pointer;
+              text-decoration: none;
+              display: inline-block;
+              transition: all 0.3s ease;
+              font-size: 1rem;
+            }
+            
+            .btn-primary {
+              background: white;
+              color: var(--primary);
+            }
+            
+            .btn-primary:hover {
+              background: #f1f5f9;
+              transform: translateY(-2px);
+            }
+            
+            .btn-secondary {
+              background: transparent;
+              color: white;
+              border: 1px solid rgba(255, 255, 255, 0.3);
+            }
+            
+            .btn-secondary:hover {
+              background: rgba(255, 255, 255, 0.1);
+            }
+            
+            .credit {
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 1px solid rgba(255, 255, 255, 0.2);
+              font-size: 0.9rem;
+              opacity: 0.7;
+            }
+            
+            @media (max-width: 600px) {
+              .container {
+                padding: 30px 20px;
+              }
+              
+              h1 {
+                font-size: 2rem;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="icon">
+              <i class="fas fa-search"></i>
+            </div>
+            
+            <h1>Project Not Found</h1>
+            
+            <p>The project <span class="project-name">${requestedProject}</span> doesn't exist or may have been deleted.</p>
+            
+            <p>Please check the project name or upload it again using our upload interface.</p>
+            
+            <div class="actions">
+              <a href="/" class="btn btn-primary">
+                <i class="fas fa-home"></i> Return to Home
+              </a>
+              
+              <a href="/upload.html" class="btn btn-secondary">
+                <i class="fas fa-cloud-upload-alt"></i> Upload a New Project
+              </a>
+            </div>
+            
+            <div class="credit">
+              <p>Developed by Iconic Tech • Protected by SilentByte Security System</p>
+            </div>
+          </div>
+          
+          <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+        </body>
+        </html>
+      `);
+    }
+  }
+  
+  // Generic 404 for other paths
+  res.status(404).send(`
+    <div style="font-family: 'Poppins', sans-serif; text-align: center; padding: 50px 20px;">
+      <h1 style="color: #6366f1;">404 - Page Not Found</h1>
+      <p>The page you're looking for doesn't exist.</p>
+      <a href="/" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background: #6366f1; color: white; text-decoration: none; border-radius: 6px;">
+        Return to Home
+      </a>
+    </div>
   `);
 });
 
